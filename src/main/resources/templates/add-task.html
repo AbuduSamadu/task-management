@@ -1,10 +1,27 @@
 <!DOCTYPE html>
-<html lang="en">
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <title>Add Task</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
 </head>
 <body>
-$END$
+<div class="container mt-5">
+    <h2>Add New Task</h2>
+    <form th:action="@{/save-task}" th:object="${task}" method="post">
+        <div class="form-group">
+            <label>Title</label>
+            <input type="text" class="form-control" th:field="*{title}">
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea class="form-control" th:field="*{description}"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Due Date</label>
+            <input type="date" class="form-control" th:field="*{dueDate}">
+        </div>
+        <button type="submit" class="btn btn-primary">Save Task</button>
+    </form>
+</div>
 </body>
 </html>
