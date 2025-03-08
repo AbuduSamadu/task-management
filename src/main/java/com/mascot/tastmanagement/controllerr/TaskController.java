@@ -36,11 +36,20 @@ public class TaskController {
      taskService.save(task);
      return "redirect:/";
     }
-
     @GetMapping("/edit-task/{id}")
-    public String editTask(@PathVariable Long id, Model model) {
-     model.addAttribute("task", taskService.findById(id));
-     return "edit-task";
+    public String editTaskForm(@PathVariable Long id, Model model) {
+        try {
+            Task task = taskService.getTaskById(id);
+            if (task == null) {
+                throw new RuntimeException("Task not found with ID: " + id);
+            }
+            model.addAttribute("task", task);
+            return "edit-task";
+        } catch (Exception e) {
+            e.printStackTrace(); // Log the exception
+            model.addAttribute("errorMessage", "An error occurred while fetching the task.");
+            return "error";
+        }
     }
 
     @PostMapping("/update-task")
