@@ -1,4 +1,4 @@
-name: Build and Push to ECR
+name: Deploy to Amazon ECR
 
 on:
   push:
@@ -10,25 +10,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Build Java App
+        run: mvn clean package
+
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
+          aws-region: us-east-1
 
-      - name: Login to Amazon ECR
-        id: aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 639032722473.dkr.ecr.us-east-1.amazonaws.com
-        uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build, tag, and push Docker image
+      - name: Login to Amazon ECR Public
+        id: login-ecr-public
+        uses: aws-actions/amazon-ecr-login@v2
+        with:
+          registry-type: public
+
+      - name: Build, tag and push image tp Amazon ECR
         env:
-          ECR_REGISTRY: ${{  639032722473.dkr.ecr.us-east-1.amazonaws.com }}
-          IMAGE_TAG: abudusamadu:latest
+          ECR_REGISTRY: public.ecr.aws/e4q9f5a4
+          ECR_REPOSITORY: abudusamadu
+          IMAGE_TAG: abudusamadu_taskmanager
+
         run: |
-          docker build -t $ECR_REGISTRY/$IMAGE_TAG .
-          docker tag $IMAGE_TAG $ECR_REGISTRY/$IMAGE_TAG
-          docker push $ECR_REGISTRY/$IMAGE_TAG
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          ocker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
