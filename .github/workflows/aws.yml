@@ -33,7 +33,7 @@ jobs:
         with:
           registry-type: public
 
-      - name: Build, tag and push image tp Amazon ECR
+      - name: Build, tag and push image to Amazon ECR
         env:
           ECR_REGISTRY: public.ecr.aws/e4q9f5a4
           ECR_REPOSITORY: abudusamadu
