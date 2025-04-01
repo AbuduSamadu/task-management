@@ -1,6 +1,6 @@
-package com.mascot.tastmanagement.repository;
+package com.mascot.taskmanagement.repository;
 
-import com.mascot.tastmanagement.model.Task;
+import com.mascot.taskmanagement.model.Task;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

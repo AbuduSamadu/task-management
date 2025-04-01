@@ -1,4 +1,4 @@
-package com.mascot.tastmanagement.model;
+package com.mascot.taskmanagement.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -14,6 +14,8 @@ public class Task {
     private String title;
     private String description;
     private LocalDate dueDate;
+
+    @Enumerated(EnumType.STRING)
     private Status status;
 
 }

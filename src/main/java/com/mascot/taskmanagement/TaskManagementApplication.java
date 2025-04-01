@@ -1,13 +1,13 @@
-package com.mascot.tastmanagement;
+package com.mascot.taskmanagement;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TastManagementApplication {
+public class TaskManagementApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(TastManagementApplication.class, args);
+        SpringApplication.run(TaskManagementApplication.class, args);
     }
 
 }

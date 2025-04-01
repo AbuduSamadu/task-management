@@ -1,7 +1,7 @@
-package com.mascot.tastmanagement.service;
+package com.mascot.taskmanagement.service;
 
-import com.mascot.tastmanagement.model.Task;
-import com.mascot.tastmanagement.repository.TaskRepository;
+import com.mascot.taskmanagement.model.Task;
+import com.mascot.taskmanagement.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

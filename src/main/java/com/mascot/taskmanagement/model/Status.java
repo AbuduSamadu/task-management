@@ -1,4 +1,4 @@
-package com.mascot.tastmanagement.model;
+package com.mascot.taskmanagement.model;
 
 public enum Status {
     TODO,
