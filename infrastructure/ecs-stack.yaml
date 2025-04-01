@@ -1,0 +1,330 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ECS Cluster, Service, Task Definitions, and CodeDeploy Integration'
+
+Parameters:
+  ProjectName:
+    Type: String
+    Default: gallery-app
+    Description: Name of the project
+
+  ContainerPort:
+    Type: Number
+    Default: 9090
+    Description: Port on which the container will listen
+
+  ECRRepositoryURI:
+    Type: String
+    Default: 329599647651.dkr.ecr.eu-central-1.amazonaws.com/gallery-app:latest
+    Description: Name of the ECR repository
+
+  TaskCPU:
+    Type: Number
+    Default: 512
+    Description: CPU units for the ECS task
+    AllowedValues:
+      - 256
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+
+  TaskMemory:
+    Type: Number
+    Default: 1024
+    Description: Memory for the ECS task
+    AllowedValues:
+      - 512
+      - 1024
+      - 2048
+      - 4096
+      - 8192
+      - 16384
+
+Resources:
+  # IAM Roles
+  ECSTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/rds/*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                Resource: "*"
+
+  ECSTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameters
+                Resource:
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/rds/*
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                Resource: "*"
+  # Load Balancer
+  ApplicationLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${ProjectName}-alb
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+        - Key: idle_timeout.timeout_seconds
+          Value: '60'
+      Subnets:
+        - Fn::ImportValue: !Sub ${ProjectName}-public-subnet-1
+        - Fn::ImportValue: !Sub ${ProjectName}-public-subnet-2
+      SecurityGroups:
+        - Fn::ImportValue: !Sub ${ProjectName}-alb-sg
+      Tags:
+        - Key: Name
+          Value: !Sub ${ProjectName}-alb
+
+  # Target Groups
+  BlueTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: blue-tg
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${ProjectName}-vpc-id
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200-299'
+
+  GreenTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: green-tg
+      Port: 80
+      Protocol: HTTP
+      TargetType: ip
+      VpcId:
+        Fn::ImportValue: !Sub ${ProjectName}-vpc-id
+      HealthCheckProtocol: HTTP
+      HealthCheckPath: /
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 3
+      UnhealthyThresholdCount: 3
+      Matcher:
+        HttpCode: '200-299'
+
+  # Listeners
+  ALBListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref BlueTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 80
+      Protocol: HTTP
+
+  ALBTestListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref GreenTargetGroup
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: 8081
+      Protocol: HTTP
+
+  # CloudWatch Log Group
+  CloudWatchLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /ecs/${ProjectName}
+      RetentionInDays: 30
+
+  # ECS Cluster
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${ProjectName}-cluster
+      CapacityProviders:
+        - FARGATE
+        - FARGATE_SPOT
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+
+  # ECS Task Definition
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Sub ${ProjectName}-task1
+      Cpu: !Ref TaskCPU
+      Memory: !Ref TaskMemory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Ref ECSTaskExecutionRole
+      TaskRoleArn: !Ref ECSTaskRole
+      ContainerDefinitions:
+        - Name: !Sub ${ProjectName}-container
+          Image: !Ref ECRRepositoryURI
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+              HostPort: !Ref ContainerPort
+              Protocol: tcp
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: ecs
+          Secrets:
+            - Name: DB_URL
+              ValueFrom: !Sub /${ProjectName}/rds/url
+            - Name: DB_USERNAME
+              ValueFrom: !Sub /${ProjectName}/rds/username
+            - Name: DB_PASSWORD
+              ValueFrom: !Sub /${ProjectName}/rds/password
+          Environment:
+            - Name: S3_BUCKET_NAME
+              Value:
+                Fn::ImportValue: !Sub ${ProjectName}-s3-bucket-name
+
+
+  # ECS Service
+  ECSService:
+    Type: AWS::ECS::Service
+    DependsOn:
+      - ALBListener
+      - BlueTargetGroup
+      - GreenTargetGroup
+    Properties:
+      ServiceName: !Sub ${ProjectName}-service
+      Cluster: !Ref ECSCluster
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: 3
+      LaunchType: FARGATE
+      DeploymentController:
+        Type: CODE_DEPLOY
+      LoadBalancers:
+        - TargetGroupArn: !Ref BlueTargetGroup
+          ContainerName: !Sub ${ProjectName}-container
+          ContainerPort: !Ref ContainerPort
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          SecurityGroups:
+            - Fn::ImportValue: !Sub ${ProjectName}-ecs-sg
+          Subnets:
+            - Fn::ImportValue: !Sub ${ProjectName}-private-subnet-1
+            - Fn::ImportValue: !Sub ${ProjectName}-private-subnet-2
+
+  # CodeDeploy Application
+  CodeDeployApplication:
+    Type: AWS::CodeDeploy::Application
+    Properties:
+      ApplicationName: !Sub ${ProjectName}-codedeploy-app
+      ComputePlatform: ECS
+
+  # CodeDeploy Deployment Group
+  DeploymentGroup:
+    Type: AWS::CodeDeploy::DeploymentGroup
+    DependsOn:
+      - ECSService
+    Properties:
+      ApplicationName: !Ref CodeDeployApplication
+      DeploymentGroupName: !Sub ${ProjectName}-deploy-group
+      DeploymentConfigName: CodeDeployDefault.ECSAllAtOnce
+      ServiceRoleArn: !GetAtt CodeDeployServiceRole.Arn
+      DeploymentStyle:
+        DeploymentType: BLUE_GREEN
+        DeploymentOption: WITH_TRAFFIC_CONTROL
+      BlueGreenDeploymentConfiguration:
+        DeploymentReadyOption:
+          ActionOnTimeout: CONTINUE_DEPLOYMENT
+          WaitTimeInMinutes: 0
+        TerminateBlueInstancesOnDeploymentSuccess:
+          Action: TERMINATE
+          TerminationWaitTimeInMinutes: 5
+      LoadBalancerInfo:
+        TargetGroupPairInfoList:
+          - TargetGroups:
+              - Name: !Ref BlueTargetGroup
+              - Name: !Ref GreenTargetGroup
+            ProdTrafficRoute:
+              ListenerArns:
+                - !Ref ALBListener
+            TestTrafficRoute:
+              ListenerArns:
+                - !Ref ALBTestListener
+      ECSServices:
+        - ClusterName: !Ref ECSCluster
+          ServiceName: !Sub ${ProjectName}-service
+
+
+  # CodeDeploy Service Role
+  CodeDeployServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codedeploy.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS
+
+  # Auto Scaling
+  AutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 6
+      MinCapacity: 2
+      ResourceId: !Join
+        - /
+        - - service
+          - !Ref ECSCluster
+          - !GetAtt ECSService.Name
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
