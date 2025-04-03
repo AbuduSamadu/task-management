@@ -1,0 +1,46 @@
+name: Deploy DynamoDB with SAM
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'sam-template.yaml'
+      - '.github/workflows/deploy-sam.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+
+      - name: Setup SAM CLI
+        uses: aws-actions/setup-sam@v2
+        with:
+          use-installer: true
+
+      - name: Build SAM application
+        run: |
+          sam build -t sam-template.yaml
+
+      - name: Deploy SAM application
+        run: |
+          sam deploy \
+            --stack-name todo-app-dynamodb \
+            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+            --no-fail-on-empty-changeset \
+            --parameter-overrides TableNamePrefix=TodoItems
+
+      - name: Output DynamoDB information
+        run: |
+          aws cloudformation describe-stacks --stack-name todo-app-dynamodb --query "Stacks[0].Outputs" --output json
+          echo "DynamoDB deployment completed"

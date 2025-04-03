@@ -4,18 +4,18 @@ Description: 'ECS Cluster, Service, Task Definitions, and CodeDeploy Integration
 Parameters:
   ProjectName:
     Type: String
-    Default: gallery-app
+    Default: todo-app
     Description: Name of the project
 
   ContainerPort:
     Type: Number
-    Default: 9090
+    Default: 8080
     Description: Port on which the container will listen
 
-  ECRRepositoryURI:
+  ECRRepositoryName:
+    Description: ECR Repository name
     Type: String
-    Default: 329599647651.dkr.ecr.eu-central-1.amazonaws.com/gallery-app:latest
-    Description: Name of the ECR repository
+    Default: todo-app
 
   TaskCPU:
     Type: Number
@@ -64,11 +64,7 @@ Resources:
                 Action:
                   - ssm:GetParameters
                 Resource:
-                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/rds/*
-              - Effect: Allow
-                Action:
-                  - kms:Decrypt
-                Resource: "*"
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/dynamoDB/endpoint
 
   ECSTaskRole:
     Type: AWS::IAM::Role
@@ -91,11 +87,7 @@ Resources:
                 Action:
                   - ssm:GetParameters
                 Resource:
-                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/rds/*
-              - Effect: Allow
-                Action:
-                  - kms:Decrypt
-                Resource: "*"
+                  - !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${ProjectName}/dynamoDB/endpoint
   # Load Balancer
   ApplicationLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
@@ -205,7 +197,7 @@ Resources:
       TaskRoleArn: !Ref ECSTaskRole
       ContainerDefinitions:
         - Name: !Sub ${ProjectName}-container
-          Image: !Ref ECRRepositoryURI
+          Image: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}:latest
           Essential: true
           PortMappings:
             - ContainerPort: !Ref ContainerPort
@@ -218,16 +210,8 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: ecs
           Secrets:
-            - Name: DB_URL
-              ValueFrom: !Sub /${ProjectName}/rds/url
-            - Name: DB_USERNAME
-              ValueFrom: !Sub /${ProjectName}/rds/username
-            - Name: DB_PASSWORD
-              ValueFrom: !Sub /${ProjectName}/rds/password
-          Environment:
-            - Name: S3_BUCKET_NAME
-              Value:
-                Fn::ImportValue: !Sub ${ProjectName}-s3-bucket-name
+            - Name: DYNAMODB_ENDPOINT
+              ValueFrom: !Sub /${ProjectName}/dynamoDB/endpoint
 
 
   # ECS Service
@@ -328,3 +312,42 @@ Resources:
           - !GetAtt ECSService.Name
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
+
+
+Outputs:
+  ClusterName:
+    Description: ECS Cluster Name
+    Value: !Ref ECSCluster
+    Export:
+      Name: !Sub ${EnvironmentName}-ClusterName
+
+  ServiceName:
+    Description: ECS Service Name
+    Value: !GetAtt ECSService.Name
+    Export:
+      Name: !Sub ${EnvironmentName}-ServiceName
+
+  TaskDefinitionName:
+    Description: Task Definition Name
+    Value: !Ref TaskDefinition
+    Export:
+      Name: !Sub ${EnvironmentName}-TaskDefinitionName
+
+
+  CodeDeployApplication:
+    Description: CodeDeploy Application Name
+    Value: !Ref CodeDeployApplication
+    Export:
+      Name: !Sub ${EnvironmentName}-CodeDeployApplicationName
+
+  DeploymentGroupName:
+    Description: CodeDeploy Deployment Group Name
+    Value: !Ref DeploymentGroup
+    Export:
+      Name: !Sub ${EnvironmentName}-DeploymentGroupName
+
+  ECRRepositoryUri:
+    Description: ECR Repository URI
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}
+    Export:
+      Name: !Sub ${EnvironmentName}-ECRRepositoryUri

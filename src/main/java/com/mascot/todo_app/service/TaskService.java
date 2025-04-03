@@ -1,7 +1,7 @@
-package com.mascot.taskmanagement.service;
+package com.mascot.todo_app.service;
 
-import com.mascot.taskmanagement.model.Task;
-import com.mascot.taskmanagement.repository.TaskRepository;
+import com.mascot.todo_app.model.Task;
+import com.mascot.todo_app.repository.TaskRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,10 +17,6 @@ public class TaskService {
 
     public List<Task> findAll() {
         return taskRepository.findAll();
-    }
-
-    public Task findById(long id) {
-        return taskRepository.findById(id).orElse(null);
     }
 
     public void save(Task task) {

@@ -4,7 +4,7 @@ Description: 'VPC Infrastructure for Highly Available Containerized Web Applicat
 Parameters:
   ProjectName:
     Type: String
-    Default: gallery-app
+    Default: todo-app
     Description: Name of the project
 
   VpcCIDR:
@@ -34,7 +34,7 @@ Parameters:
 
   ContainerPort:
     Type: Number
-    Default: 9090
+    Default: 8080
     Description: Port on which the container will listen
 
   ECRRepositoryName:
@@ -42,21 +42,6 @@ Parameters:
     Default: gallery-app
     Description: Name of the ECR repository
 
-  S3BucketName:
-    Type: String
-    Default: image-gallery-bucket-one
-    Description: Name of the S3 bucket for storing images
-
-  DBUsername:
-    Type: String
-    Default: postgres
-    Description: Username for the RDS instance
-
-  DBPassword:
-    Type: String
-    Default: Abudu?0248
-    NoEcho: true
-    Description: Password for the RDS instance
 
 Resources:
   # VPC
@@ -238,90 +223,6 @@ Resources:
         - Key: Name
           Value: !Sub ${ProjectName}-ecs-sg
 
-  RDSSecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Security group for RDS instance
-      VpcId: !Ref VPC
-      SecurityGroupIngress:
-        - IpProtocol: tcp
-          FromPort: 5432
-          ToPort: 5432
-          SourceSecurityGroupId: !Ref ECSSecurityGroup
-      Tags:
-        - Key: Name
-          Value: !Sub ${ProjectName}-rds-sg
-
-  # RDS PostgreSQL Instance
-  MyDBInstance:
-    Type: AWS::RDS::DBInstance
-    Properties:
-      DBName: postgres
-      EngineVersion:  "17.2"
-      StorageType: gp2
-      DBInstanceIdentifier: !Sub ${ProjectName}-db
-      AllocatedStorage: 20
-      DBInstanceClass: db.t3.micro
-      Engine: postgres
-      MasterUsername: !Ref DBUsername
-      MasterUserPassword: !Ref DBPassword
-      VPCSecurityGroups:
-        - !GetAtt RDSSecurityGroup.GroupId
-      DBSubnetGroupName: !Ref DBSubnetGroup
-      PubliclyAccessible: false
-      MultiAZ: true
-      BackupRetentionPeriod: 7
-      PreferredBackupWindow:  '02:00-03:00'
-      PreferredMaintenanceWindow: "SUN:03:00-SUN:04:00"
-      DeletionProtection: false
-      Tags:
-        - Key: Name
-          Value: !Sub ${ProjectName}-postgres-db
-
-  # DB Subnet Group
-  DBSubnetGroup:
-    Type: AWS::RDS::DBSubnetGroup
-    Properties:
-      DBSubnetGroupDescription: Subnet group for RDS
-      SubnetIds:
-        - !Ref PrivateSubnet1
-        - !Ref PrivateSubnet2
-
-  # Store RDS Credentials in Parameter Store
-  DBUrlParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub /${ProjectName}/rds/url
-      Type: String
-      Value: !Sub 'jdbc:postgresql://${MyDBInstance.Endpoint.Address}:${MyDBInstance.Endpoint.Port}/postgres'
-
-  DBUsernameParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub /${ProjectName}/rds/username
-      Type: String
-      Value: !Ref DBUsername
-
-  DBPasswordParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub /${ProjectName}/rds/password
-      Type: String
-      Value: !Ref DBPassword
-
-  ImagesBucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref S3BucketName
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: false
-        BlockPublicPolicy: false
-        IgnorePublicAcls: false
-        RestrictPublicBuckets: false
-      VersioningConfiguration:
-        Status: Enabled
-
-
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -398,24 +299,6 @@ Outputs:
     Export:
       Name: !Sub ${ProjectName}-ecs-sg
 
-  RDSSecurityGroup:
-    Description: RDS Security Group ID
-    Value: !Ref RDSSecurityGroup
-    Export:
-      Name: !Sub ${ProjectName}-rds-sg
-
-  RDSInstanceEndpoint:
-    Description: RDS Instance Endpoint
-    Value: !GetAtt MyDBInstance.Endpoint.Address
-    Export:
-      Name: !Sub ${ProjectName}-rds-endpoint
-
-  S3BucketName:
-    Description: S3 Bucket Name
-    Value: !Ref S3BucketName
-    Export:
-      Name: !Sub ${ProjectName}-s3-bucket-name
-
   ECRRepositoryName:
     Description: ECR Repository Name
     Value: !Ref ECRRepository
@@ -427,27 +310,3 @@ Outputs:
     Value: !Ref ContainerPort
     Export:
       Name: !Sub ${ProjectName}-container-port
-
-  DBEndpointParameter:
-    Description: Parameter Store Name for RDS Endpoint
-    Value: !Sub /${ProjectName}/rds/endpoint
-    Export:
-      Name: !Sub ${ProjectName}-rds-endpoint-ssm-parameter
-
-  DBUsernameParameter:
-    Description: Parameter Store Name for RDS Username
-    Value: !Sub /${ProjectName}/rds/username
-    Export:
-      Name: !Sub ${ProjectName}-rds-username-ssm-parameter
-
-  DBPasswordParameter:
-    Description: Parameter Store Name for RDS Password
-    Value: !Sub /${ProjectName}/rds/password
-    Export:
-      Name: !Sub ${ProjectName}-rds-password-ssm-parameter
-
-  DBUrlParameter:
-    Description: Parameter Store Name for RDS URL
-    Value: !Sub /${ProjectName}/rds/url
-    Export:
-      Name: !Sub ${ProjectName}-rds-url-ssm-parameter

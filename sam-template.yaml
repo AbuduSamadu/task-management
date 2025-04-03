@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'DynamoDB table for Todo application'
+
+Metadata:
+  AWS::ServerlessRepo::Application:
+    Name: todo-app-dynamodb
+    Description: DynamoDB table for Todo application
+    Author: Abudu
+    SpdxLicenseId: MIT
+    ReadmeUrl: README.md
+    Labels: ['todo', 'dynamodb', 'serverless']
+
+
+Parameters:
+  TableNamePrefix:
+    Type: String
+    Default: todo-app
+    Description: Prefix for the DynamoDB table name
+
+Resources:
+  TodoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Ref TableNamePrefix
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      Tags:
+        - Key: Application
+          Value: TodoApp
+
+Outputs:
+  TodoTableName:
+    Description: Name of the DynamoDB table
+    Value: !Ref TodoTable
+    Export:
+      Name: TodoTableName
+  TodoTableArn:
+    Description: ARN of the DynamoDB table
+    Value: !GetAtt TodoTable.Arn
+    Export:
+      Name: TodoTableArn
