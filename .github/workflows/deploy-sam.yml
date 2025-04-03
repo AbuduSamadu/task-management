@@ -38,7 +38,8 @@ jobs:
       - name: SAM deploy
         run: |
           sam deploy \
-            --stack-name todo-app-dynamodb \
+            --stack-name todo-dynamodb-stack \
             --template-file sam-template.yaml \
             --capabilities CAPABILITY_IAM \
-            --no-fail-on-empty-changeset
+            --no-fail-on-empty-changeset \
+            --resolve-s3
