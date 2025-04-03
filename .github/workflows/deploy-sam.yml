@@ -35,12 +35,8 @@ jobs:
       - name: Deploy SAM application
         run: |
           sam deploy \
-            --stack-name todo-app-dynamodb \
-            --capabilities CAPABILITY_IAM CAPABILITY_AUTO_EXPAND \
+           --template-file sam-template.yaml \
+            --stack-name todo-dynamodb-stack \
+            --no-confirm-changeset \
             --no-fail-on-empty-changeset \
-            --parameter-overrides TableNamePrefix=TodoItems
-
-      - name: Output DynamoDB information
-        run: |
-          aws cloudformation describe-stacks --stack-name todo-app-dynamodb --query "Stacks[0].Outputs" --output json
-          echo "DynamoDB deployment completed"
+            --capabilities CAPABILITY_IAM
