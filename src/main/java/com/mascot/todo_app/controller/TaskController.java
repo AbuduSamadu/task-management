@@ -55,13 +55,13 @@ public class TaskController {
 
     @PostMapping("/update-task")
     public String updateTask(@ModelAttribute Task task) {
-        taskService.save(task);
+        taskService.update(task);
         return "redirect:/";
     }
 
     @GetMapping("/delete-task/{id}")
     public String deleteTask(@PathVariable String id) {
-        taskService.delete(id);
+        taskService.deleteById(id);
         return "redirect:/";
     }
 }
