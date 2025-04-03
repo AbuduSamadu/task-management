@@ -6,5 +6,5 @@ Resources:
         TaskDefinition: "arn:aws:ecs:eu-central-1:329599647651:task-definition/todo-app-task:2"
         LoadBalancerInfo:
           ContainerName: "todo-app-container"
-          ContainerPort: 9090
+          ContainerPort: 8080
         PlatformVersion: "LATEST"
