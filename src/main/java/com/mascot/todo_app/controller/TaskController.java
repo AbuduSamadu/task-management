@@ -43,7 +43,7 @@ public class TaskController {
     }
 
     @GetMapping("/edit-task/{id}")
-    public String editTaskForm(@PathVariable Long id, Model model) {
+    public String editTaskForm(@PathVariable String id, Model model) {
         Task task = taskService.getTaskById(id);
         if (task == null) {
             return "redirect:/";
@@ -60,7 +60,7 @@ public class TaskController {
     }
 
     @GetMapping("/delete-task/{id}")
-    public String deleteTask(@PathVariable Long id) {
+    public String deleteTask(@PathVariable String id) {
         taskService.delete(id);
         return "redirect:/";
     }
