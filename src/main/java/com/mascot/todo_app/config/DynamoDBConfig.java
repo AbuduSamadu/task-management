@@ -1,6 +1,5 @@
 package com.mascot.todo_app.config;
 
-
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.client.builder.AwsClientBuilder;
 import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
@@ -16,7 +15,6 @@ public class DynamoDBConfig {
 
     @Value("${amazon.dynamodb.endpoint}")
     private String amazonDynamoDBEndpoint;
-
 
     @Value("${amazon.aws.region}")
     private String amazonAWSRegion;
@@ -42,6 +40,3 @@ public class DynamoDBConfig {
         return builder.build();
     }
 }
-
-
-
