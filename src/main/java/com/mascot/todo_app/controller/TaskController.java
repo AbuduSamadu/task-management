@@ -1,9 +1,9 @@
-package com.mascot.taskmanagement.controller;
+package com.mascot.todo_app.controller;
 
 
-import com.mascot.taskmanagement.model.Status;
-import com.mascot.taskmanagement.model.Task;
-import com.mascot.taskmanagement.service.TaskService;
+import com.mascot.todo_app.model.Status;
+import com.mascot.todo_app.model.Task;
+import com.mascot.todo_app.service.TaskService;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

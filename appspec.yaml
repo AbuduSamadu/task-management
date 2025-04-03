@@ -1,0 +1,10 @@
+version: 0.0
+Resources:
+  - TargetService:
+      Type: AWS::ECS::Service
+      Properties:
+        TaskDefinition: "arn:aws:ecs:eu-central-1:329599647651:task-definition/gallery-app-task1:14"
+        LoadBalancerInfo:
+          ContainerName: "gallery-app-container"
+          ContainerPort: 9090
+        PlatformVersion: "LATEST"

@@ -1,14 +1,14 @@
-package com.mascot.taskmanagement;
+package com.mascot.todo_app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class TaskManagementApplication {
+public class TodoApplication {
 
     
     public static void main(String[] args) {
-        SpringApplication.run(TaskManagementApplication.class, args);
+        SpringApplication.run(TodoApplication.class, args);
     }
 
 }

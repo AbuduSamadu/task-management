@@ -1,4 +1,4 @@
-package com.mascot.taskmanagement.model;
+package com.mascot.todo_app.model;
 
 import jakarta.persistence.*;
 import lombok.Data;

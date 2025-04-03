@@ -24,7 +24,7 @@
     <div class="form-group">
       <label>Status</label>
       <select class="form-control" th:field="*{status}">
-        <option th:each="statusOption : ${T(com.mascot.taskmanagement.model.Status).values()}"
+        <option th:each="statusOption : ${T(com.mascot.todo_app.model.Status).values()}"
                 th:value="${statusOption}"
                 th:text="${statusOption}">
         </option>
