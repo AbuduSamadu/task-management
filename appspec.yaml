@@ -3,8 +3,8 @@ Resources:
   - TargetService:
       Type: AWS::ECS::Service
       Properties:
-        TaskDefinition: "arn:aws:ecs:eu-central-1:329599647651:task-definition/gallery-app-task1:14"
+        TaskDefinition: "arn:aws:ecs:eu-central-1:329599647651:task-definition/todo-app-task:2"
         LoadBalancerInfo:
-          ContainerName: "gallery-app-container"
+          ContainerName: "todo-app-container"
           ContainerPort: 9090
         PlatformVersion: "LATEST"
