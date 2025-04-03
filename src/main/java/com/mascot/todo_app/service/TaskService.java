@@ -8,27 +8,32 @@ import java.util.List;
 
 @Service
 public class TaskService {
-    //comment
+
     private final TaskRepository taskRepository;
 
     public TaskService(TaskRepository taskRepository) {
         this.taskRepository = taskRepository;
     }
 
+
     public List<Task> findAll() {
         return taskRepository.findAll();
     }
+
 
     public void save(Task task) {
         taskRepository.save(task);
     }
 
-    public void delete(String id) {
+    public void deleteById(String id){
         taskRepository.deleteById(id);
+    }
+
+    public void update(Task task) {
+        taskRepository.save(task);
     }
 
     public Task getTaskById(String id){
         return taskRepository.getTaskById(id);
     }
-
 }
