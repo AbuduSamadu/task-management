@@ -110,7 +110,7 @@ Resources:
   BlueTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: blue-tg
+      Name: !Sub ${ProjectName}-blue-tg
       Port: 80
       Protocol: HTTP
       TargetType: ip
@@ -128,7 +128,7 @@ Resources:
   GreenTargetGroup:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
-      Name: green-tg
+      Name: !Sub ${ProjectName}-green-tg
       Port: 80
       Protocol: HTTP
       TargetType: ip
@@ -313,41 +313,3 @@ Resources:
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
-
-Outputs:
-  ClusterName:
-    Description: ECS Cluster Name
-    Value: !Ref ECSCluster
-    Export:
-      Name: !Sub ${EnvironmentName}-ClusterName
-
-  ServiceName:
-    Description: ECS Service Name
-    Value: !GetAtt ECSService.Name
-    Export:
-      Name: !Sub ${EnvironmentName}-ServiceName
-
-  TaskDefinitionName:
-    Description: Task Definition Name
-    Value: !Ref TaskDefinition
-    Export:
-      Name: !Sub ${EnvironmentName}-TaskDefinitionName
-
-
-  CodeDeployApplication:
-    Description: CodeDeploy Application Name
-    Value: !Ref CodeDeployApplication
-    Export:
-      Name: !Sub ${EnvironmentName}-CodeDeployApplicationName
-
-  DeploymentGroupName:
-    Description: CodeDeploy Deployment Group Name
-    Value: !Ref DeploymentGroup
-    Export:
-      Name: !Sub ${EnvironmentName}-DeploymentGroupName
-
-  ECRRepositoryUri:
-    Description: ECR Repository URI
-    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ECRRepositoryName}
-    Export:
-      Name: !Sub ${EnvironmentName}-ECRRepositoryUri
