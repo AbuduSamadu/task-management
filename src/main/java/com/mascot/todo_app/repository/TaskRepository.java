@@ -20,10 +20,6 @@ public class TaskRepository {
         return dynamoDBMapper.scan(Task.class, new DynamoDBScanExpression());
     }
 
-    public Task findById(String id) {
-        return dynamoDBMapper.load(Task.class, id);
-    }
-
     public void save(Task task) {
         dynamoDBMapper.save(task);
     }
