@@ -2,15 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: 'DynamoDB table for Todo application'
 
-Metadata:
-  AWS::ServerlessRepo::Application:
-    Name: todo-app-dynamodb
-    Description: DynamoDB table for Todo application
-    Author: Abudu
-    SpdxLicenseId: MIT
-    ReadmeUrl: README.md
-    Labels: ['todo', 'dynamodb', 'serverless']
-
 
 Parameters:
   TableNamePrefix:
