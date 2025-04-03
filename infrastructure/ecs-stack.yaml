@@ -212,6 +212,8 @@ Resources:
           Secrets:
             - Name: DYNAMODB_ENDPOINT
               ValueFrom: !Sub /${ProjectName}/dynamoDB/endpoint
+            - Name: AWS_REGION
+              ValueFrom: !Sub /${ProjectName}/dynamoDB/region
 
 
   # ECS Service
