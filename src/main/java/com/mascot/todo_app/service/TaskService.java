@@ -23,11 +23,11 @@ public class TaskService {
         taskRepository.save(task);
     }
 
-    public void delete(Long id) {
+    public void delete(String id) {
         taskRepository.deleteById(id);
     }
 
-    public Task getTaskById(long id){
+    public Task getTaskById(String id){
         return taskRepository.getTaskById(id);
     }
 
