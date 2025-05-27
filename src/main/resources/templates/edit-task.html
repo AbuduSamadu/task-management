@@ -11,22 +11,22 @@
     <input type="hidden" th:field="*{id}">
     <div class="form-group">
       <label>Title</label>
-      <input type="text" class="form-control" th:field="*{title}">
+        <input type="text" class="form-control" th:field="*{title}">
     </div>
     <div class="form-group">
       <label>Description</label>
-      <textarea class="form-control" th:field="*{description}"></textarea>
+        <textarea class="form-control" th:field="*{description}"></textarea>
     </div>
     <div class="form-group">
       <label>Due Date</label>
-      <input type="date" class="form-control" th:field="*{dueDate}">
+        <input type="date" class="form-control" th:field="*{dueDate}">
     </div>
     <div class="form-group">
       <label>Status</label>
       <select class="form-control" th:field="*{status}">
-        <option th:each="status : ${T(com.example.taskmanager.model.Task.Status).values()}"
-                th:value="${status}"
-                th:text="${status}">
+        <option th:each="statusOption : ${T(com.mascot.todo_app.model.Status).values()}"
+                th:value="${statusOption}"
+                th:text="${statusOption}">
         </option>
       </select>
     </div>

@@ -1,45 +1,69 @@
-name: Deploy to Amazon ECR
+name: CI/CD Pipeline
+
 on:
   push:
     branches:
       - main
+
 jobs:
   build-and-push:
+    name: Build and Push to ECR
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      # Step 1: Checkout code
+      - name: Checkout code
         uses: actions/checkout@v3
 
+      # Step 2: Set up JDK 21
       - name: Set up JDK 21
         uses: actions/setup-java@v3
         with:
-          distribution: 'temurin'
           java-version: '21'
+          distribution: 'temurin'
+          cache: maven
 
-      - name: Build Java App
-        run: mvn clean package
-
+      # Step 3: Configure AWS credentials
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{secrets.AWS_SECRET_ACCESS_KEY}}
-          aws-region: us-east-1
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
 
-      - name: Login to Amazon ECR Public
-        id: login-ecr-public
+      - name: Build with Maven
+        run: mvn -B package -DskipTests --file pom.xml
+
+      # Step 5: Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
         with:
-          registry-type: public
+          registry-type: private
 
-      - name: Build, tag and push image tp Amazon ECR
+      # Step 6: Build, tag, and push image to Amazon ECR
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
         env:
-          ECR_REGISTRY: public.ecr.aws/e4q9f5a4
-          ECR_REPOSITORY: abudusamadu
-          IMAGE_TAG: abudusamadu_taskmanager
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: todo-app
+          IMAGE_TAG: ${{ github.sha }}
         run: |
           docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+
+      - name: Package deployment
+        run: |
+          zip -r deployment.zip appspec.yaml
+          aws s3 cp deployment.zip s3://image-gallery-bucket-two/deployment.zip
+
+      - name: Deploy to ECS with CodeDeploy
+        run: |
+          aws deploy create-deployment \
+            --application-name todo-app-codedeploy-app \
+            --deployment-group-name todo-app-deploy-group \
+            --s3-location bucket=image-gallery-bucket-two,bundleType=zip,key=deployment.zip \
+            --region eu-central-1
